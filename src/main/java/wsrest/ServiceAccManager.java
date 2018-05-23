@@ -73,13 +73,19 @@ public class ServiceAccManager {
 		FormatedResponse rep = new FormatedResponse();
 		int status = 200;
 		if((risk != null) || (account != null) || (lastname != null) || (name != null)) {
-			Float amount = Float.valueOf(account);
-			BankAccount ba = new BankAccount(name,lastname,amount,risk);
-			ofy().save().entity(ba).now();
-			rep.setMessage("Request correctly handled");
-			rep.setDone(true);
-			rep.setData(ba);
-		}else {
+			if(risk.equals("high") || risk.equals("low")){
+				Float amount = Float.valueOf(account);
+				BankAccount ba = new BankAccount(name,lastname,amount,risk);
+				ofy().save().entity(ba).now();
+				rep.setMessage("Request correctly handled");
+				rep.setDone(true);
+				rep.setData(ba);
+			}else{
+				rep.setMessage("Error with the parameters risk");
+				rep.setDone(false);
+				status = 400;
+			}			
+		}else{
 			rep.setMessage("Error with the parameters given");
 			rep.setDone(false);
 			status = 400;
@@ -106,4 +112,32 @@ public class ServiceAccManager {
 		return Response.status(status).entity(rep).build();
 	}
 	
+	@POST
+	@Path("/updateAccount")
+	@Consumes("application/x-www-form-urlencoded")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response updateAccount(@FormParam("id") String id,
+									@FormParam("amount") String amount) {
+		FormatedResponse rep = new FormatedResponse();
+		int status = 200;
+		if((id != null) || (amount != null)) {
+			Float amountAccount = Float.valueOf(amount);
+			BankAccount account = ofy().load().type(BankAccount.class).id(id).now();
+			if(account != null){
+				account.setAccount(amountAccount + account.getAccount());
+				ofy().save().entity(account).now();
+				rep.setMessage("Request correctly handled");
+				rep.setDone(true);
+			}else{
+				rep.setMessage("The account doenst exist");
+				rep.setDone(false);
+				status = 400;
+			}	
+		}else {
+			rep.setMessage("Error with the parameters given");
+			rep.setDone(false);
+			status = 400;
+		}
+		return Response.status(status).entity(rep).build();
+	}
 }
